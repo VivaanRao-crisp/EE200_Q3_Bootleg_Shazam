@@ -126,6 +126,7 @@ with tab_single:
             ax.set_ylabel("frequency (Hz)")
             ax.set_ylim([0, 8500])
             st.pyplot(fig)
+            plt.close(fig)  # free the figure so it doesnt pile up in memory across reruns
 
         # b) constellation of peaks
         with c2:
@@ -137,6 +138,7 @@ with tab_single:
             ax.set_ylabel("frequency (Hz)")
             ax.set_ylim([0, 8500])
             st.pyplot(fig)
+            plt.close(fig)  # free the figure so it doesnt pile up in memory across reruns
 
         # c) offset histogram (the thing that actually decides the winner)
         if result is not None:
@@ -147,6 +149,7 @@ with tab_single:
             ax.set_xlabel("offset (s)")
             ax.set_ylabel("aligned hashes")
             st.pyplot(fig)
+            plt.close(fig)  # free the figure so it doesnt pile up in memory across reruns
 
 
 # batch mode

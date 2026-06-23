@@ -1,0 +1,3 @@
+[server]
+# cap each uploaded file at 20 MB (applies to both single and batch mode)
+maxUploadSize = 20
