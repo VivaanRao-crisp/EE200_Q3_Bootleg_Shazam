@@ -51,7 +51,7 @@ def set_nyan_background():
 set_nyan_background()
 
 
-# load the database once and keep it in memory (its ~60mb, dont reload every click)
+# load the database once and keep it in memory (its around 60mb, dont reload every click)
 @st.cache_resource
 def load_db():
     here = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +95,7 @@ with tab_single:
         path = save_upload(uploaded)
         st.audio(uploaded)
 
-        # any length clip is accepted; we only ever fingerprint the first 60s of it, for preventing oom errors
+        # any length clip is accepted; we only ever fingerprint the first 60s of it, this bounds the spectrogram size (rendering a huge one OOMs the 1GB server) while letting users drop in full songs instead of pre-trimming to a short query.
         if librosa.get_duration(path=path) > 60:
             st.info("clip is longer than 60 s — using just the first 60 s for matching")
 
@@ -113,7 +113,7 @@ with tab_single:
         finally:
             os.remove(path)
 
-        # the final answer, big and clear
+        # the final answer
         if result is None:
             st.markdown("## 💔 oh no ! there's no match in the database")
         else:
@@ -165,7 +165,7 @@ with tab_batch:
 
     uploaded_files = st.file_uploader("upload query clips", type=["mp3"],accept_multiple_files=True, key="batch")
 
-    # cap batch size: processing an unbounded number of clips on a 1GB server OOMs it
+    # cap batch size
     if uploaded_files and len(uploaded_files) > 20:
         st.error(f"batch mode is capped at 20 files at once — you uploaded {len(uploaded_files)}. please upload 20 or fewer.")
         st.stop()
