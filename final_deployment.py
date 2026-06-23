@@ -120,7 +120,7 @@ with tab_single:
         # a) spectrogram
         with c1:
             fig, ax = plt.subplots(figsize=(7, 4))
-            ax.pcolormesh(times, frequencies, stft_db, shading="auto", cmap="inferno")
+            ax.pcolormesh(times, frequencies, stft_db, shading="auto", cmap="inferno") #shading changed from gouraud to auto because gouraud creates an out of memory error on even slightly longer querier (It kept crashing on single mode when i was trying by a full upload of "back in the ussr" lol)
             ax.set_title("spectrogram")
             ax.set_xlabel("time (s)")
             ax.set_ylabel("frequency (Hz)")
