@@ -18,9 +18,10 @@ TARGET_SR = 22050  # librosa default, but we set it explicitly so its clear that
 # we define functions to load audio, compute spectrogram, find peaks, get hashes, match hashes, and identify songs based on the hashes.
 # full pipeline: audio -> spectrogram -> peaks -> paired hashes
 
-def load_audio(path):
+def load_audio(path, duration=None):
     # sr=TARGET_SR forces librosa to resample everything to the same sample rate, so the hashes are always fingerprinted identically (whether building the db or querying). mono = 1D signal.
-    audio_data, sample_rate = librosa.load(path, sr=TARGET_SR, mono=True)
+    # duration=None loads the whole file (what build_database.py wants for full tracks). queries pass duration=60 so we only ever decode the first 60s — bounds memory and avoids the spectrogram OOM, while accepting clips of any length.
+    audio_data, sample_rate = librosa.load(path, sr=TARGET_SR, mono=True, duration=duration)
     return audio_data, sample_rate
 
 
@@ -119,9 +120,9 @@ def match(query_hashes, master_db):
     }
 
 
-def identify(path, master_db):
+def identify(path, master_db, duration=None):
     #wrapper function kind of.
-    #load audio, then get hashes, then match against the master database
-    audio_data, sample_rate = load_audio(path)
+    #load audio (capped at `duration` seconds for queries), then get hashes, then match against the master database
+    audio_data, sample_rate = load_audio(path, duration=duration)
     query_hashes = get_hashes(audio_data, sample_rate)
     return match(query_hashes, master_db)

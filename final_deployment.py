@@ -95,16 +95,16 @@ with tab_single:
         path = save_upload(uploaded)
         st.audio(uploaded)
 
+        # any length clip is accepted; we only ever fingerprint the first 60s of it.
+        # this bounds the spectrogram size (rendering a huge one OOMs the 1GB server) while
+        # letting users drop in full songs instead of pre-trimming to a short query.
+        if librosa.get_duration(path=path) > 60:
+            st.info("clip is longer than 60 s — using just the first 60 s for matching")
+
         # run the whole pipeline once and reuse the pieces for the plots
         try:
-            # reject clips longer than 60s up front: rendering a huge spectrogram OOMs the 1GB server.
-            # st.stop() raises a BaseException (not Exception), so it slips past the except below and
-            # still hits the finally, guaranteeing os.remove(path) runs even on rejection.
-            if librosa.get_duration(path=path) > 60:
-                st.error("this clip is longer than 60 s — please upload a shorter query clip (≤60 s)")
-                st.stop()
-
-            audio, sr = fe.load_audio(path)
+            # duration=60 makes librosa decode only the first 60s, so everything downstream stays bounded
+            audio, sr = fe.load_audio(path, duration=60)
             frequencies, times, stft, stft_db = fe.compute_spectrogram(audio, sr)
             peak_freq_idx, peak_time_idx = fe.find_peaks(stft_db)
             query_hashes = fe.get_hashes(audio, sr)
@@ -168,8 +168,8 @@ with tab_batch:
     uploaded_files = st.file_uploader("upload query clips", type=["mp3"],accept_multiple_files=True, key="batch")
 
     # cap batch size: processing an unbounded number of clips on a 1GB server OOMs it
-    if uploaded_files and len(uploaded_files) > 100:
-        st.error(f"batch mode is capped at 100 files at once — you uploaded {len(uploaded_files)}. please upload 100 or fewer.")
+    if uploaded_files and len(uploaded_files) > 20:
+        st.error(f"batch mode is capped at 20 files at once — you uploaded {len(uploaded_files)}. please upload 20 or fewer.")
         st.stop()
 
     if uploaded_files and st.button("identify all"):
@@ -178,7 +178,8 @@ with tab_batch:
         for i, uf in enumerate(uploaded_files):
             path = save_upload(uf)
             try:
-                result = fe.identify(path, master_db)
+                # cap each clip at the first 60s, same as single mode, so a long file cant OOM the server
+                result = fe.identify(path, master_db, duration=60)
                 # prediction = matched song filename without extension, or "No Match"
                 prediction = no_ext(result["song"]) if result else "No Match"
             except Exception:
