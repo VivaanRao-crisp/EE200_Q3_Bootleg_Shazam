@@ -3,6 +3,7 @@ import base64
 import pickle
 import tempfile
 
+import librosa
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
@@ -96,6 +97,13 @@ with tab_single:
 
         # run the whole pipeline once and reuse the pieces for the plots
         try:
+            # reject clips longer than 60s up front: rendering a huge spectrogram OOMs the 1GB server.
+            # st.stop() raises a BaseException (not Exception), so it slips past the except below and
+            # still hits the finally, guaranteeing os.remove(path) runs even on rejection.
+            if librosa.get_duration(path=path) > 60:
+                st.error("this clip is longer than 60 s — please upload a shorter query clip (≤60 s)")
+                st.stop()
+
             audio, sr = fe.load_audio(path)
             frequencies, times, stft, stft_db = fe.compute_spectrogram(audio, sr)
             peak_freq_idx, peak_time_idx = fe.find_peaks(stft_db)
@@ -158,6 +166,11 @@ with tab_batch:
     st.write("upload many clips at once, identify them all, download results.csv")
 
     uploaded_files = st.file_uploader("upload query clips", type=["mp3"],accept_multiple_files=True, key="batch")
+
+    # cap batch size: processing an unbounded number of clips on a 1GB server OOMs it
+    if uploaded_files and len(uploaded_files) > 100:
+        st.error(f"batch mode is capped at 100 files at once — you uploaded {len(uploaded_files)}. please upload 100 or fewer.")
+        st.stop()
 
     if uploaded_files and st.button("identify all"):
         rows = []
