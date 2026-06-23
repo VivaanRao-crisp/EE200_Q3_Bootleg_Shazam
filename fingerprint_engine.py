@@ -28,7 +28,7 @@ def compute_spectrogram(audio_data, sample_rate, nperseg=NPERSEG, noverlap=NOVER
     # ordinary stft, one little dft per window slice
     frequencies, times, stft = signal.spectrogram(audio_data, fs=sample_rate, nperseg=nperseg, noverlap=noverlap)
     # db scale so the quiet stuff and loud stuff are on the same map. 1e-10 dodges log(0), but not too big that it supresses the quiet stuff as observed in notebook.
-    stft_db = 20 * np.log10(1e-10 + stft)
+    stft_db = 10 * np.log10(1e-10 + stft)
     return frequencies, times, stft, stft_db
 
 

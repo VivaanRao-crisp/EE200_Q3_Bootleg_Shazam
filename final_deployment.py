@@ -53,7 +53,8 @@ set_nyan_background()
 # load the database once and keep it in memory (its ~60mb, dont reload every click)
 @st.cache_resource
 def load_db():
-    with open("database.pkl", "rb") as f:
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "database.pkl"), "rb") as f:
         return pickle.load(f)
 
 
@@ -94,11 +95,17 @@ with tab_single:
         st.audio(uploaded)
 
         # run the whole pipeline once and reuse the pieces for the plots
-        audio, sr = fe.load_audio(path)
-        frequencies, times, stft, stft_db = fe.compute_spectrogram(audio, sr)
-        peak_freq_idx, peak_time_idx = fe.find_peaks(stft_db)
-        query_hashes = fe.get_hashes(audio, sr)
-        result = fe.match(query_hashes, master_db)
+        try:
+            audio, sr = fe.load_audio(path)
+            frequencies, times, stft, stft_db = fe.compute_spectrogram(audio, sr)
+            peak_freq_idx, peak_time_idx = fe.find_peaks(stft_db)
+            query_hashes = fe.get_hashes(audio, sr)
+            result = fe.match(query_hashes, master_db)
+        except Exception:
+            st.error("couldn't read this clip, try another mp3")
+            st.stop()
+        finally:
+            os.remove(path)
 
         # the final answer, big and clear
         if result is None:
@@ -154,9 +161,14 @@ with tab_batch:
         progress = st.progress(0.0)
         for i, uf in enumerate(uploaded_files):
             path = save_upload(uf)
-            result = fe.identify(path, master_db)
-            # prediction = matched song filename without extension, or "No Match"
-            prediction = no_ext(result["song"]) if result else "No Match"
+            try:
+                result = fe.identify(path, master_db)
+                # prediction = matched song filename without extension, or "No Match"
+                prediction = no_ext(result["song"]) if result else "No Match"
+            except Exception:
+                prediction = "Error"
+            finally:
+                os.remove(path)
             rows.append({"filename": uf.name, "prediction": prediction})
             progress.progress((i + 1) / len(uploaded_files))
 
