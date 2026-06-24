@@ -7,6 +7,7 @@ from scipy.ndimage import maximum_filter
 # app.py and the notebook all import it, so the database and the queries are always
 # fingerprinted with these exact same params. just remember if you change any of these,
 # rebuild database.pkl (run build_database.py) or old hashes wont line up with new queries.
+
 NPERSEG = 1024
 NOVERLAP = 512
 NEIGHBORHOOD = (20, 20)

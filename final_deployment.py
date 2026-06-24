@@ -166,8 +166,8 @@ with tab_batch:
     uploaded_files = st.file_uploader("upload query clips", type=["mp3"],accept_multiple_files=True, key="batch")
 
     # cap batch size
-    if uploaded_files and len(uploaded_files) > 20:
-        st.error(f"batch mode is capped at 20 files at once — you uploaded {len(uploaded_files)}. please upload 20 or fewer.")
+    if uploaded_files and len(uploaded_files) > 50:
+        st.error(f"batch mode is capped at 50 files at once — you uploaded {len(uploaded_files)}. please upload 50 or fewer.")
         st.stop()
 
     if uploaded_files and st.button("identify all"):
