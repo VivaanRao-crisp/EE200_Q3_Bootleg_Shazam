@@ -126,7 +126,7 @@ with tab_single:
         # a) spectrogram
         with c1:
             fig, ax = plt.subplots(figsize=(7, 4))
-            ax.pcolormesh(times, frequencies, stft_db, shading="gouraud", cmap="inferno") 
+            ax.pcolormesh(times, frequencies, stft_db, shading="gouraud", cmap="inferno") #shading gouraud finally works w audio trimmed
             ax.set_xlabel("time (s)")
             ax.set_ylabel("frequency (Hz)")
             ax.set_ylim([0, 8500])
