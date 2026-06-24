@@ -136,7 +136,7 @@ with tab_single:
         # b) constellation of peaks
         with c2:
             fig, ax = plt.subplots(figsize=(7, 4))
-            ax.pcolormesh(times, frequencies, stft_db, shading="auto", cmap="gray")
+            ax.pcolormesh(times, frequencies, stft_db, shading="gouraud", cmap="gray")
             ax.scatter(times[peak_time_idx], frequencies[peak_freq_idx], s=8, c="cyan")
             ax.set_title("constellation of peaks")
             ax.set_xlabel("time (s)")
