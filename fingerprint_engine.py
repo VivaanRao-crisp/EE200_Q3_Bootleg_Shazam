@@ -14,14 +14,14 @@ NEIGHBORHOOD = (20, 20)
 PEAK_PERCENTILE = 85
 TARGET_WINDOW_TIME = 50
 TARGET_WINDOW_FREQ = 30
-TARGET_SR = 22050  # librosa default, but we set it explicitly so its clear that the db and queries are fingerprinted at the same sample rate
+TARGET_SR = 22050  # librosa default, but set it explicitly so its clear that the db and queries are fingerprinted at the same sample rate
 
 # we define functions to load audio, compute spectrogram, find peaks, get hashes, match hashes, and identify songs based on the hashes.
 # full pipeline: audio -> spectrogram -> peaks -> paired hashes
 
 def load_audio(path, duration=None):
     # sr=TARGET_SR forces librosa to resample everything to the same sample rate, so the hashes are always fingerprinted identically (whether building the db or querying). mono = 1D signal.
-    # duration=None loads the whole file (what build_database.py wants for full tracks). queries pass duration=60 so we only ever decode the first 60s — bounds memory and avoids the spectrogram OOM, while accepting clips of any length.
+    # duration=None loads the whole file (what build_database.py wants for full tracks). queries pass duration=60 so only ever decode the first 60s — bounds memory and avoids the spectrogram OOM, while accepting clips of any length.
     audio_data, sample_rate = librosa.load(path, sr=TARGET_SR, mono=True, duration=duration)
     return audio_data, sample_rate
 
@@ -37,12 +37,12 @@ def compute_spectrogram(audio_data, sample_rate, nperseg=NPERSEG, noverlap=NOVER
 def find_peaks(stft_db, neighborhood=NEIGHBORHOOD, pct=PEAK_PERCENTILE):
     # a pixel is a peak if its the biggest one in its neighborhood box
     local_max = maximum_filter(stft_db, size=neighborhood) == stft_db
-    # and only keep the loud ones so we dont fingerprint background noise
+    # and only keep the loud ones so that background noise isn't fingerprinted
     threshold = np.percentile(stft_db, pct)
     peak_mask = local_max & (stft_db > threshold)
     # row = freq index, col = time index
     peak_freq_idx, peak_time_idx = np.where(peak_mask)
-    return peak_freq_idx, peak_time_idx # these are the (arrays) coords of the peaks, which we will glue together into pairs and hash in get_hashes()
+    return peak_freq_idx, peak_time_idx # these are the (arrays) coords of the peaks, which will be glued together into pairs and hash in get_hashes()
 
 
 def get_hashes(audio_data, sample_rate):
@@ -50,7 +50,7 @@ def get_hashes(audio_data, sample_rate):
     frequencies, times, stft, stft_db = compute_spectrogram(audio_data, sample_rate)
     peak_freq_idx, peak_time_idx = find_peaks(stft_db)
 
-    # glue the coords together and sort by time so we can scan forwards
+    # glue the coords together and sort by time so that code can scan forwards
     points = list(zip(peak_time_idx, peak_freq_idx))
     points.sort(key=lambda x: x[0]) #sort the list by time index (the first element of the tuple)
 
@@ -93,7 +93,7 @@ def match(query_hashes, master_db):
                 # db_time - q_time should be roughly constant for every matching hash
                 offset = round(db_time - q_time, 1)
                 key = (db_song_name, offset) #define a 2d kinda key
-                # if we havent seen this (song, offset) before start it at 0, then add a vote
+                # if havent seen this (song, offset) before start it at 0 votes, then add a vote
                 if key not in matches:
                     matches[key] = 0
                 matches[key] += 1
@@ -105,13 +105,13 @@ def match(query_hashes, master_db):
     winning_song, winning_offset = best_key
     winning_score = matches[best_key]
 
-    # pull out the offsets for just the winning song so we can plot its histogram in the app
+    # pull out the offsets for just the winning song so that histogram can be plotted 
     offset_histogram = {}
     for key in matches:
         song = key[0]
         offset = key[1]
         if song == winning_song:
-            offset_histogram[offset] = matches[key] #matches[key] is the number of votes for that (song, offset) pair, so we store it in the histogram keyed by offset
+            offset_histogram[offset] = matches[key] #matches[key] is the number of votes for that (song, offset) pair, so store it in the histogram keyed by offset
 
     return {
         "song": winning_song,

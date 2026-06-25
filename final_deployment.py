@@ -95,7 +95,7 @@ with tab_single:
         path = save_upload(uploaded)
         st.audio(uploaded)
 
-        # any length clip is accepted; we only ever fingerprint the first 60s of it, this bounds the spectrogram size (rendering a huge one OOMs the 1GB server) while letting users drop in full songs instead of pre-trimming to a short query.
+        # any length clip is accepted; set code to only ever fingerprint the first 60s of it, this bounds the spectrogram size (rendering a huge one OOMs the 1GB server) while letting users drop in full songs instead of pre-trimming to a short query.
         if librosa.get_duration(path=path) > 60:
             st.info("clip is longer than 60 s — using just the first 60 s for matching")
 
